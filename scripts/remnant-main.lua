@@ -318,11 +318,10 @@ uevr.sdk.callbacks.on_early_calculate_stereo_view_offset(function(device, view_i
                 --else
                 gun_attach_hook:set_rotation_offset(temp_vec3f:set(0, -1.571, 0)) --Rotate 90 degrees (in radians)
                 is_using_two_handed_weapon = false
-                end
-
-            else
-                print("Failed to find gun_attach")
             end
+
+        else
+            print("Failed to find gun_attach")
         end
     end
 end)
