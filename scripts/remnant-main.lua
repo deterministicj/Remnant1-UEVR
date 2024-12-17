@@ -29,6 +29,8 @@ local actor_c = find_required_object("Class /Script/Engine.Actor")
 local motion_controller_component_c = find_required_object("Class /Script/HeadMountedDisplay.MotionControllerComponent")
 local scene_component_c = find_required_object("Class /Script/Engine.SceneComponent")
 
+local is_vignette_enabled = true
+
 local hmd_actor = nil -- The purpose of the HMD actor is to accurately track the HMD's world transform
 local left_hand_actor = nil
 local right_hand_actor = nil
@@ -211,10 +213,11 @@ local function on_level_changed(new_level)
     right_hand_actor = nil
     left_hand_component = nil
     right_hand_component = nil
+    is_vignette_enabled = true
 end
 
 --api:execute_command("Camera.AimSnapping 0") --Disable aim assist
-local is_vignette_enabled = true
+
 local is_using_two_handed_weapon = false
 
 
@@ -224,13 +227,7 @@ uevr.sdk.callbacks.on_pre_engine_tick(function(engine_voidptr, delta)
         return
     end
 
-    local pawn = api:get_local_pawn(0)
-    if pawn ~= nil then
-        pawn.bUseControllerRotationPitch = false
-        pawn.bUseControllerRotationRoll = true
-        pawn.bUseControllerRotationYaw = true
-    end
-    
+    local pawn = api:get_local_pawn(0)    
     local viewport = engine.GameViewport
 
     if viewport then
@@ -324,7 +321,38 @@ uevr.sdk.callbacks.on_early_calculate_stereo_view_offset(function(device, view_i
             print("Failed to find gun_attach")
         end
     end
+
 end)
+
+uevr.sdk.callbacks.on_xinput_get_state(function(retval, user_index, state)
+    -- if we are at main menu, bail out.
+    local game_instance_gf = find_required_object("Class /Script/GunfireRuntime.GameInstanceGunfire")
+    local game_instance_gf_instance = UEVR_UObjectHook.get_first_object_by_class(game_instance_gf)
+    local is_in_gameplay = game_instance_gf_instance:IsInGameplay()
+    
+    if is_in_gameplay == false then
+        return
+    end
+    --print(string.format("is_in_gameplay=%d", is_in_gameplay and 1 or 0))
+
+    local uihud = find_required_object("Class /Script/GunfireRuntime.UIHud")
+    local uihud_instance = UEVR_UObjectHook.get_first_object_by_class(uihud)
+    local is_in_menu = not uihud_instance:IsVisible()
+
+    if (is_in_menu == true) then
+        return
+    end
+
+    local pawn = api:get_local_pawn(0)
+
+    --Only enable pawn yaw rotation when the right stick is in use to resolve roll direction issue
+    if pawn ~= nil then
+        pawn.bUseControllerRotationPitch = false
+        pawn.bUseControllerRotationRoll = true
+        pawn.bUseControllerRotationYaw = (state.Gamepad.sThumbRX > 5000 or state.Gamepad.sThumbRX < -5000)
+    end
+end)
+
 
 
 -- Two Handed Weapons
