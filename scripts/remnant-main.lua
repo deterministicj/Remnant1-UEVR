@@ -253,6 +253,9 @@ uevr.sdk.callbacks.on_pre_engine_tick(function(engine_voidptr, delta)
     end
 end)
 
+local player_hud = nil
+local hudwidget = nil   
+
 uevr.sdk.callbacks.on_early_calculate_stereo_view_offset(function(device, view_index, world_to_meters, position, rotation, is_double)
     -- if we are at main menu, bail out.
     local game_instance_gf = find_required_object("Class /Script/GunfireRuntime.GameInstanceGunfire")
@@ -274,12 +277,11 @@ uevr.sdk.callbacks.on_early_calculate_stereo_view_offset(function(device, view_i
 	end
 
  
-    local pawn = api:get_local_pawn(0)
-
-    if pawn ~= nil then
+	local pawn = api:get_local_pawn(0)
+	local player_controller = api:get_player_controller(0)
+	if pawn ~= nil and player_controller ~= nil then
         
         --Get HUD info
-        local player_controller = pawn:GetController()
         local player_hud = player_controller:GetHud()
         local hudwidget = player_hud.HudWidget        
         
